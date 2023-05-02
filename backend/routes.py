@@ -20,7 +20,7 @@ mongodb_username = os.environ.get('MONGODB_USERNAME')
 mongodb_password = os.environ.get('MONGODB_PASSWORD')
 mongodb_port = os.environ.get('MONGODB_PORT')
 
-print(f'The value of MONGODB_SERVICE is: {mongodb_service}')
+print(f'SITE_ROOT is: {SITE_ROOT}')
 
 if mongodb_service == None:
     app.logger.error('Missing MongoDB server in the MONGODB_SERVICE variable')
