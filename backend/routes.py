@@ -56,43 +56,49 @@ def health():
     return jsonify(dict(status="OK")), 200
 
 
-@app.route('/song', methods=['GET'])
-def songs():
-    #db = client.songs
-    ssongs = db.songs.find()
-    song_list = parse_json(ssongs)
-    
-    return jsonify({'songs': song_list}), 200
-    
+@app.route("/count", methods=['GET'] )
+def count():
+    """return length of data"""
+    count = db.songs.count_documents({})
+
+    return {"count": count}, 200
 
 
+    @app.route("/song", methods=["GET"])
+    def songs():
+        # docker run -d --name mongodb-test -e MONGO_INITDB_ROOT_USERNAME=user
+        # -e MONGO_INITDB_ROOT_PASSWORD=password -e MONGO_INITDB_DATABASE=collection mongo
+        results = list(db.songs.find({}))
+        print(results[0])
+        return {"songs": parse_json(results)}, 200    
 
-@app.route('/song/<int:id>', methods=['GET'])
+
+@app.route("/song/<int:id>", methods=["GET"])
 def get_song_by_id(id):
-    song = parse_json( db.songs.find_one({"id": id}) )
-    if song is None:
-        return jsonify({"message": "song with id not found"}), 404
-    else:
-        return jsonify(song), 200
+    song = db.songs.find_one({"id": id})
+    if not song:
+        return {"message": f"song with id {id} not found"}, 404
+    return parse_json(song), 200
 
 
-@app.route('/song', methods=['POST'])
+
+@app.route("/song", methods=["POST"])
 def create_song():
-    # Extract song data from request body
-    song = request.get_json()
-    id = song['id']
+    # get data from the json body
+    song_in = request.json
 
-    # Check if song with id already exists
-    if db.songs.find_one({"id": id}):
-        return {"message": f"song with id {id} already present"}, 302
+    print(song_in["id"])
 
-    # Append song to database
-    song["id"] = id
-    db.songs.insert_one(song)
+    # if the id is already there, return 303 with the URL for the resource
+    song = db.songs.find_one({"id": song_in["id"]})
+    if song:
+        return {
+            "Message": f"song with id {song_in['id']} already present"
+        }, 302
 
-    # Return success message
-    return {"message": "song created successfully"}, 200
+    insert_id: InsertOneResult = db.songs.insert_one(song_in)
 
+    return {"inserted id": parse_json(insert_id.inserted_id)}, 201
 
 @app.route("/song/<int:id>", methods=["PUT"])
 def update_song(id):
@@ -113,7 +119,6 @@ def update_song(id):
         return {"message": "song found, but nothing updated"}, 200
     else:
         return parse_json(db.songs.find_one({"id": id})), 201
-
 
 @app.route("/song/<int:id>", methods=["DELETE"])
 def delete_song(id):
